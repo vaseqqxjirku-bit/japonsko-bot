@@ -9,7 +9,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-ROLE_ID_TO_PING = 1564306169105748040  # <--- TADY SI PŘEPIŠ ID SVÉ ROLE RODINA
+ROLE_ID_TO_PING = 123456789012345678  # <--- TADY SI PŘEPIŠ ID SVÉ ROLE RODINA
 
 FREQ_MIN = 100.00
 FREQ_MAX = 999.99
@@ -53,15 +53,15 @@ class ReasonModal(discord.ui.Modal, title="Nouzová změna frekvence"):
         embed = create_radio_embed(new_freq, old_current, user_name, reason_text)
         await interaction.response.edit_message(embed=embed, view=RadioView())
         
-        # Odeslání pingu s rolí a nastavením mazání po 10 sekundách
+        # Odeslání pingu s rolí a nastavením mazání po 5 minutách (300 vteřin)
         mention = f"<@&{ROLE_ID_TO_PING}>"
         alert_msg = await interaction.channel.send(
-            content=f"🚨 {mention} **NOUZOVÁ ZMĚNA FREKVENCE!**\nNová freq: **`{new_freq} MHz`**\n**Změnil:** {interaction.user.mention}\n**Důvod:** *{reason_text}*\n*(Tato zpráva se za 10 sekund sama smaže)*",
+            content=f"🚨 {mention} **NOUZOVÁ ZMĚNA FREKVENCE!**\nNová freq: **`{new_freq} MHz`**\n**Změnil:** {interaction.user.mention}\n**Důvod:** *{reason_text}*\n*(Tato zpráva se za 5 minut sama smaže)*",
             allowed_mentions=discord.AllowedMentions(roles=True)
         )
         
-        # Časovač na smazání po 10 vteřinách
-        await asyncio.sleep(10)
+        # Časovač na smazání po 5 minutách (300 vteřin)
+        await asyncio.sleep(300)
         try:
             await alert_msg.delete()
         except discord.HTTPException:
