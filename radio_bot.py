@@ -74,5 +74,5 @@ async def vysilacka(ctx):
     embed = create_radio_embed(initial_freq)
     await ctx.send(embed=embed, view=RadioView())
 
-TOKEN = os.getenv("MTU3MTE0OTA1MjI3ODYwMzc4Ng.GFO1M1.4UMK1Zphi0z1WD_RMIYRLKRvHDML_VYxljh11E")
+TOKEN = os.getenv("DISCORD_TOKEN")
 bot.run(TOKEN)
