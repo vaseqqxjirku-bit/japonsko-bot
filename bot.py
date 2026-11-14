@@ -41,7 +41,7 @@ async def vysilacka(ctx, *, zprava: str = "Žádná zpráva"):
         description=zprava,
         color=discord.Color.green()
     )
-    embed.set_footer(text=fAutor: {ctx.author.display_name}")
+    embed.set_footer(text=f"Autor: {ctx.author.display_name}")
     await ctx.send(embed=embed)
 
 bot.run(os.getenv("DISCORD_TOKEN"))
