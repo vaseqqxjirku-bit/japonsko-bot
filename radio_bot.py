@@ -2,13 +2,14 @@ import discord
 from discord.ext import commands
 import random
 import os
+import asyncio
 
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-ROLE_ID_TO_PING = 1564306169105748040  # <--- TADY PŘEPIŠ TOHLE ČÍSLO ZA ID TVÉ ROLE RODINA
+ROLE_ID_TO_PING = 1564306169105748040  # <--- TADY SI PŘEPIŠ ID SVÉ ROLE RODINA
 
 FREQ_MIN = 100.00
 FREQ_MAX = 999.99
@@ -16,26 +17,27 @@ FREQ_MAX = 999.99
 def generate_freq():
     return f"{random.uniform(FREQ_MIN, FREQ_MAX):.2f}"
 
-def create_radio_embed(current_freq: str, prev_freq: str = "---", user: discord.Member = None):
+def create_radio_embed(current_freq: str, prev_freq: str = "---", user: str = "Nikdo", reason: str = "Zatím bez změn"):
     embed = discord.Embed(
         title="🇯🇵 VYSÍLAČKA 🇯🇵",
         color=discord.Color.from_rgb(188, 0, 45)
     )
     embed.add_field(name="Předchozí frekvence", value=f"`{prev_freq} MHz`", inline=False)
     embed.add_field(name="Aktuální frekvence", value=f"# `📡 {current_freq} MHz`", inline=False)
-    
-    if user:
-        embed.set_footer(text=f"Naposledy změnil: {user.display_name}", icon_url=user.display_avatar.url)
-    else:
-        embed.set_footer(text="Japonský vysílačkový systém")
+    embed.add_field(name="Poslední změna", value=f"**Uživatel:** {user}\n**Důvod:** *{reason}*", inline=False)
+    embed.set_footer(text="Japonský vysílačkový systém")
     return embed
 
-class RadioView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
+class ReasonModal(discord.ui.Modal, title="Nouzová změna frekvence"):
+    reason_input = discord.ui.TextInput(
+        label="Důvod změny frekvence",
+        style=discord.TextStyle.short,
+        placeholder="Např. Policie v patách, úprk z lokace...",
+        required=True,
+        max_length=100
+    )
 
-    @discord.ui.button(label="Změna freq (případ nouze)", style=discord.ButtonStyle.danger, emoji="🆘", custom_id="change_freq_emergency")
-    async def change_freq_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def on_submit(self, interaction: discord.Interaction):
         old_embed = interaction.message.embeds[0]
         
         old_current = "---"
@@ -44,22 +46,35 @@ class RadioView(discord.ui.View):
             old_current = val.replace("#", "").replace("`", "").replace("📡", "").strip().replace(" MHz", "")
         
         new_freq = generate_freq()
+        reason_text = self.reason_input.value
+        user_name = interaction.user.display_name
         
-        embed = discord.Embed(
-            title="🇯🇵 VYSÍLAČKA 🇯🇵",
-            color=discord.Color.from_rgb(188, 0, 45)
-        )
-        embed.add_field(name="Předchozí frekvence", value=f"`{old_current} MHz`", inline=False)
-        embed.add_field(name="Aktuální frekvence", value=f"# `📡 {new_freq} MHz`", inline=False)
-        embed.set_footer(text=f"Změnil: {interaction.user.display_name}", icon_url=interaction.user.display_avatar.url)
+        # Aktualizace hlavního panelu vysílačky
+        embed = create_radio_embed(new_freq, old_current, user_name, reason_text)
+        await interaction.response.edit_message(embed=embed, view=RadioView())
         
-        await interaction.response.edit_message(embed=embed, view=self)
-        
+        # Odeslání pingu s rolí a nastavením mazání po 10 sekundách
         mention = f"<@&{ROLE_ID_TO_PING}>"
-        await interaction.channel.send(
-            content=f"🚨 {mention} **ZMĚNA FREKVENCE!**\nNová freq: **`{new_freq} MHz`** *(Změnil: {interaction.user.mention})*",
+        alert_msg = await interaction.channel.send(
+            content=f"🚨 {mention} **NOUZOVÁ ZMĚNA FREKVENCE!**\nNová freq: **`{new_freq} MHz`**\n**Změnil:** {interaction.user.mention}\n**Důvod:** *{reason_text}*\n*(Tato zpráva se za 10 sekund sama smaže)*",
             allowed_mentions=discord.AllowedMentions(roles=True)
         )
+        
+        # Časovač na smazání po 10 vteřinách
+        await asyncio.sleep(10)
+        try:
+            await alert_msg.delete()
+        except discord.HTTPException:
+            pass
+
+class RadioView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="SOS", style=discord.ButtonStyle.danger, emoji="🚨", custom_id="change_freq_emergency")
+    async def change_freq_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Otevře vyskakovací formulář pro zadání důvodu
+        await interaction.response.send_modal(ReasonModal())
 
 @bot.event
 async def on_ready():
