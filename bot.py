@@ -31,7 +31,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-ROLE_ID_TO_PING = 123456789012345678  # <--- TADY SI PŘEPIŠ ID SVÉ ROLE RODINA
+ROLE_ID_TO_PING = 1564306169105748040  # <--- TADY SI PŘEPIŠ ID SVÉ ROLE RODINA
 
 FREQ_MIN = 100.00
 FREQ_MAX = 999.99
