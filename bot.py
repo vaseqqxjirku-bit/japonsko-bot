@@ -75,15 +75,15 @@ class ReasonModal(discord.ui.Modal, title="Nouzová změna frekvence"):
         embed = create_radio_embed(new_freq, old_current, user_name, reason_text)
         await interaction.response.edit_message(embed=embed, view=RadioView())
         
-        # Odeslání pingu s rolí a nastavením mazání po 5 minutách (300 vteřin)
+        # Odeslání pingu s rolí a nastavením mazání po 20 sekundách
         mention = f"<@&{ROLE_ID_TO_PING}>"
         alert_msg = await interaction.channel.send(
-            content=f"🚨 {mention} **NOUZOVÁ ZMĚNA FREKVENCE!**\nNová freq: **`{new_freq} MHz`**\n**Změnil:** {interaction.user.mention}\n**Důvod:** *{reason_text}*\n*(Tato zpráva se za 5 minut sama smaže)*",
+            content=f"🚨 {mention} **NOUZOVÁ ZMĚNA FREKVENCE!**\nNová freq: **`{new_freq} MHz`**\n**Změnil:** {interaction.user.mention}\n**Důvod:** *{reason_text}*\n*(Tato zpráva se za 20 sekund sama smaže)*",
             allowed_mentions=discord.AllowedMentions(roles=True)
         )
         
-        # Časovač na smazání po 5 minutách (300 vteřin)
-        await asyncio.sleep(300)
+        # Časovač na smazání po 20 sekundách
+        await asyncio.sleep(20)
         try:
             await alert_msg.delete()
         except discord.HTTPException:
